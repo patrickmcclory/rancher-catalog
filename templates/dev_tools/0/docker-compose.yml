@@ -1,10 +1,22 @@
 version: '2'
 volumes:
-  gitlab-app-data:
-    driver: ${gitlab_volumedriver}
   gitlab-log-data:
     driver: ${gitlab_volumedriver}
   gitlab-conf-files:
+    driver: ${gitlab_volumedriver}
+  gitlab-ssh-data:
+    driver: ${gitlab_volumedriver}
+  gitlab-uploads:
+    driver: ${gitlab_volumedriver}
+  gitlab-backups:
+    driver: ${gitlab_volumedriver}
+  gitlab-artifacts:
+    driver: ${gitlab_volumedriver}
+  gitlab-lfs-objects:
+    driver: ${gitlab_volumedriver}
+  gitlab-registry:
+    driver: ${gitlab_volumedriver}
+  gitlab-pages:
     driver: ${gitlab_volumedriver}
   gitlab-postgres-data:
     driver: ${postgres_volumedriver}
@@ -114,6 +126,7 @@ services:
         gitlab_rails['db_password'] = "${postgres_password}"
         gitlab_rails['db_host'] = "gitlab-postgres"
         gitlab_rails['db_port'] = 5432
+
         ## !- run redis in separate container
         redis['enable'] = false
         gitlab_rails['redis_host'] = "gitlab-redis"
@@ -143,46 +156,6 @@ services:
 
         ## !- Additional Configuration
         ${gitlab_additional_configuration}
-
-  gitlab-runner-config:
-    image: gitlab/gitlab-runner:${gitlab_runner_image_version}
-    stdin_open: true
-    volumes:
-    - /etc/gitlab-runner/
-    tty: true
-    links:
-      - ${gitlab_subdomain}.${base_domain_name}:gitlab-server
-    command:
-    - register
-    - -n
-    - --url
-    - https://${gitlab_subdomain}.${base_domain_name}
-    - --registration-token
-    - ${gitlab_ci_initial_token}
-    - --executor
-    - docker
-    - --description
-    - Rancher Docker Runner
-    - --docker-image
-    - docker:latest
-    - --docker-volumes
-    - /var/run/docker.sock:/var/run/docker.sock
-    - --docker-privileged
-    labels:
-      io.rancher.container.start_once: 'true'
-  gitlab-runner:
-    image: gitlab/gitlab-runner:${gitlab_runner_image_version}
-    stdin_open: true
-    volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
-    tty: true
-    volumes_from:
-    - gitlab-runner-config
-    command:
-    - run
-    labels:
-      io.rancher.sidekicks: gitlab-runner-config
-      io.rancher.scheduler.global: 'true'
 
   gitlab-plantuml:
     image: plantuml-server:jetty
