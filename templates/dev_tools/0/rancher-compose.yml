@@ -67,7 +67,7 @@
       required: true
       default: "pages"
       type: "string"
-    - variale: "proxy_ip_cidr"
+    - variable: "proxy_ip_cidr"
       type: "string"
       required: true
       default: "172.16.16.0/20"
@@ -180,6 +180,26 @@ gitlab-server:
   retain_ip: true
   health_check:
     port: 80
+    interval: 30000
+    unhealthy_threshold: 3
+    strategy: recreate
+    response_timeout: 3000
+    healthy_threshold: 2
+gitlab-postgres:
+  scale: 1
+  retain_ip: true
+  health_check:
+    port: 5432
+    interval: 30000
+    unhealthy_threshold: 3
+    strategy: recreate
+    response_timeout: 3000
+    healthy_threshold: 2
+gitlab-redis:
+  scale: 1
+  retain_ip: true
+  health_check:
+    port: 6379
     interval: 30000
     unhealthy_threshold: 3
     strategy: recreate
