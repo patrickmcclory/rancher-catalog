@@ -26,9 +26,9 @@ services:
   gitlab-postgres:
     image: postgres:${postgres_image_version}
     environment:
-      POSTGRES_USER: ${gitlab_postgres_user}
-      POSTGRES_PASSWORD: ${gitlab_postgres_password}
-      POSTGRES_DB: ${gitlab_postgres_db}
+      POSTGRES_USER: "${postgres_username}"
+      POSTGRES_PASSWORD: "${postgres_password}"
+      POSTGRES_DB: "${postgres_db_name}"
     volumes:
       - gitlab-postgres-data:/var/lib/postgresql/data
 
