@@ -1,11 +1,11 @@
 .catalog:
-  name: Gitlab Community
+  name: Gitlab Full Deploy
   version: 10.0.3-ce.0
   description: |
     Gitlab CE Deployment with all the 'bells and whistles'
   minimum_rancher_version: v1.0.0
   maintainer: "Patrick McClory <patrick@mcclory.io>"
-  uuid: gitlab-deploy-0
+  uuid: gitlab-full-0
   questions:
     - variable: "gitlab_ce_image_version"
       type: "enum"
@@ -97,6 +97,7 @@
       label: "Google Oauth2 App Secret:"
       required: true
     - variable: "gitlab_additional_configuration"
+      label: "Gitlab Additional Configuration:"
       description: "Gitlab Omnibus configurations to append to the configuration provided - intended to be used for authentication and other settings"
       required: false
       default: ""
@@ -165,6 +166,8 @@
       description: "Password for Gitlab to use when accessing this Postgres database instance.  "
     - variable: "redis_image_version"
       type: "enum"
+      label: "Redis Image Version:"
+      description: "Docker tag ID for redis image."
       default: "4.0.2-alpine"
       required: true
       options:
