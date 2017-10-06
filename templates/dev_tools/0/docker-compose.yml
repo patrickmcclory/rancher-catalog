@@ -156,6 +156,3 @@ services:
 
         ## !- Additional Configuration
         ${gitlab_additional_configuration}
-
-  gitlab-plantuml:
-    image: plantuml-server:jetty
