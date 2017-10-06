@@ -1,0 +1,184 @@
+.catalog:
+  name: Gitlab Community
+  version: 10.0.3-ce.0
+  description: |
+    Gitlab CE Deployment with all the 'bells and whistles'
+  minimum_rancher_version: v1.0.0
+  maintainer: "Patrick McClory <patrick@mcclory.io>"
+  uuid: gitlab-deploy-0
+  questions:
+    - variable: "gitlab_ce_image_version"
+      type: "enum"
+      default: "10.0.3-ce.0"
+      label: "Gitlab CE Image Version:"
+      description: "Docker tag ID for gitlab/gitlab-ce image."
+      options:
+        - 10.0.3-ce.0
+        - 10.0.2-ce.0
+        - 10.0.1-ce.0
+        - 9.5.8-ce.0
+        - 9.4.6-ce.0
+        - 9.3.11-ce.0
+        - 9.2.10-ce.0
+        - 9.1.10-ce.0
+        - 9.0.13-ce.0
+    - variable: "gitlab_runner_image_version"
+      type: "enum"
+      default: "alpine-v10.0.2"
+      label: "Gitlab Runner Image Version:"
+      description: "Docker tag ID for gitlab/gitlab-runner image."
+      options:
+        - alpine-v10.0.2
+        - ubuntu-v10.0.2
+        - v10.0.2
+        - alpine-v10.0.1
+        - ubuntu-v10.0.1
+        - v10.0.1
+        - alpine-v10.0.0
+        - ubuntu-v10.0.0
+        - v10.0.0
+        - alpine-v9.5.0
+        - ubuntu-v9.5.0
+        - v9.5.0
+        - alpine-v9.4.2
+        - ubuntu-v9.4.2
+        - v9.4.2
+    - variable: "base_domain_name"
+      description: "Base DNS name from which all dev services will be deployed."
+      label: "Base Domain Name:"
+      required: true
+      type: "string"
+      default: "mcclory.io"
+    - variable: "gitlab_subdomain"
+      description: "Gitlab's subdomain to append with the specified base_domain_name to get the fqdn for Gitlab once deployed"
+      label: "Hostname:"
+      required: true
+      default: "git"
+      type: "string"
+    - variable: "gitlab_registry_subdomain"
+      description: "Gitlab registry's subdomain to append with the specified base_domain_name to get the fqdn for Gitlab Registry once deployed"
+      label: "Registry subdomain:"
+      required: true
+      default: "registry"
+      type: "string"
+    - variable: "gitlab_pages_subdomain"
+      description: "Gitlab pages's subdomain to append with the specified base_domain_name to get the fqdn for Gitlab Pages once deployed"
+      label: "Pages subdomain:"
+      required: true
+      default: "pages"
+      type: "string"
+    - variale: "proxy_ip_cidr"
+      type: "string"
+      required: true
+      default: "172.16.16.0/20"
+      description: "CIDR blbock where the reverse proxy sits for proxying requests to the server."
+      label: "Proxy IP Cidr:"
+    - variable: "gitlab_ci_initial_token"
+      description: "Token to set for the gitlab ci runner registration process"
+      label: "Gitlab CI Initial Token:"
+      type: password
+      required: true
+    - variable: "gitlab_initial_root_password"
+      description: "Password to assign to the root user on initial deployment"
+      label: "Gitlab Initial Root Password:"
+      type: password
+      required: true
+    - variable: "google_analytics_id"
+      description: "Additional Google Analytics account to attach to this instance of Gitlab for usage statistics"
+      label: "Google Analytics ID:"
+      required: false
+      type: "string"
+    - variable: "google_oauth2_app_id"
+      type: "string"
+      label: "Google OAuth2 App ID:"
+      required: true
+    - variable: "google_oauth2_app_secret"
+      type: password
+      label: "Google Oauth2 App Secret:"
+      required: true
+    - variable: "gitlab_additional_configuration"
+      description: "Gitlab Omnibus configurations to append to the configuration provided - intended to be used for authentication and other settings"
+      required: false
+      default: ""
+      type: "multiline"
+    - variable: "gitlab_volumedriver"
+      description: "Choose the Volume Driver being used for Gitlab:"
+      label: "Gitlab Volume Driver:"
+      required: true
+      default: rancher-nfs
+      type: "enum"
+      options:
+        - local
+        - rancher-nfs
+    - variable: "postgres_volumedriver"
+      description: "Choose the Volume Driver being used for Postgres:"
+      label: "Postgres Volume Driver:"
+      required: true
+      default: rancher-nfs
+      type: "enum"
+      options:
+        - local
+        - rancher-nfs
+    - variable: "redis_volumedriver"
+      description: "Choose the Volume Driver being used for Redis:"
+      label: "Redis Volume Driver:"
+      required: true
+      default: local
+      type: "enum"
+      options:
+        - local
+        - rancher-nfs
+    - variable: "postgres_image_version"
+      type: "enum"
+      default: "9.6.5-alpine"
+      label: "Postgres Image Version"
+      description: "Docker tag ID for postgres image."
+      options:
+        - "10.0"
+        - 10.0-alpine
+        - 9.6.5
+        - 9.6.5-alpine
+        - 9.5.9
+        - 9.5.9-alpine
+        - 9.4.14
+        - 9.4.14-alpine
+        - 9.3.19
+        - 9.3.19-alpine
+        - 9.2.23
+        - 9.2.23-alpine
+    - variable: "postgres_db_name"
+      type: "string"
+      default: "gitlab"
+      required: true
+      label: "Postgres Database Name:"
+      description: "Name of database to create for the speficied user in Postgres for use by Gitlab."
+    - variable: "postgres_username"
+      type: "string"
+      default: "gitlab"
+      required: true
+      label: "Postgres Username:"
+      description: "Username for Gitlab to use when accessing this Postgres database instance."
+    - variable: "postgres_password"
+      type: "password"
+      required: true
+      label: "Postgres Password:"
+      description: "Password for Gitlab to use when accessing this Postgres database instance.  "
+    - variable: "redis_image_version"
+      type: "enum"
+      default: "4.0.2-alpine"
+      required: true
+      options:
+        - 3.2.11
+        - 3.2.11-alpine
+        - 4.0.2
+        - 4.0.2-alpine
+gitlab-server:
+  scale: 1
+  retain_ip: true
+  health_check:
+    port: 80
+    interval: 30000
+    unhealthy_threshold: 3
+    strategy: recreate
+    response_timeout: 3000
+    healthy_threshold: 2

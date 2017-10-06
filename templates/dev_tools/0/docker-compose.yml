@@ -1,0 +1,188 @@
+version: '2'
+volumes:
+  gitlab-app-data:
+    driver: ${gitlab_volumedriver}
+  gitlab-log-data:
+    driver: ${gitlab_volumedriver}
+  gitlab-conf-files:
+    driver: ${gitlab_volumedriver}
+  gitlab-postgres-data:
+    driver: ${postgres_volumedriver}
+  gitlab-redis-data:
+    driver: ${redis_volumedriver}
+services:
+  gitlab-postgres:
+    image: postgres:${postgres_image_version}
+    environment:
+      POSTGRES_USER: ${gitlab_postgres_user}
+      POSTGRES_PASSWORD: ${gitlab_postgres_password}
+      POSTGRES_DB: ${gitlab_postgres_db}
+    volumes:
+      - gitlab-postgres-data:/var/lib/postgresql/data
+
+  gitlab-redis:
+    image: redis:${redis_image_version}
+    volumes:
+      gitlab-redis-data:/data
+
+  gitlab-server:
+    image: gitlab/gitlab-ce:${gitlab_ce_image_version}
+    ports:
+      - ${ssh_port}:22/tcp
+      - ${http_port}:80/tcp
+      - ${https_port}:443/tcp
+    labels:
+      io.rancher.container.hostname_override: container_name
+    links:
+      - gitlab-postgres
+      - gitlab-redis
+      - gitlab-plantuml
+    volumes:
+      - gitlab-log-data:/var/log/gitlab
+      - gitlab-conf-files:/etc/gitlab
+      - gitlab-ssh-data:/var/opt/gitlab/.ssh
+      - gitlab-git-data:/mnt/git-data
+      - gitlab-uploads:/mnt/uploads
+      - gitlab-backups:/mnt/backups
+      - gitlab-artifacts:/mnt/artifacts
+      - gitlab-lfs-objects:/mnt/lfs-objects
+      - gitlab-registry:/mnt/registry
+      - gitlab-pages:/mnt/pages
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://${gitlab_subdomain}.${base_domain_name}'
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        nginx['real_ip_trusted_addresses'] = [ '${proxy_ip_cidr}' ]
+        nginx['real_ip_header'] = 'X-Real-IP'
+        nginx['real_ip_recursive'] = 'on'
+
+        nginx['proxy_set_headers'] = {
+          "X-Forwarded-Proto" => "https",
+          "X-Forwarded-Ssl" => "on"}
+
+        registry_external_url 'https://${gitlab_registry_subdomain}.${base_domain_name}'
+        gitlab_rails['registry_enabled'] = true
+        gitlab_rails['registry_host'] = "${gitlab_registry_subdomain}.${base_domain_name}"
+        gitlab_rails['registry_port'] = "5005"
+        gitlab_rails['registry_path'] = "/mnt/registry"
+        gitlab_rails['gitlab_shell_ssh_port'] = 22
+
+        pages_external_url "https://${gitlab_pages_subdomain}.${base_domain_name}"
+        gitlab_pages['enable'] = true
+        gitlab_pages['listen_proxy'] = ":8090"
+
+        gitlab_pages['metrics_address'] = ":9235"
+        gitlab_rails['pages_path'] = "/mnt/pages"
+
+        gitlab_rails['artifacts_enabled'] = true
+        gitlab_rails['artifacts_path'] = "/mnt/artifacts"
+        gitlab_rails['lfs_enabled'] = true
+        gitlab_rails['lfs_storage_path'] = "/mnt/lfs-objects"
+
+        gitlab_rails['manage_backup_path'] = true
+        gitlab_rails['backup_path'] = "/mnt/backups"
+        gitlab_rails['backup_archive_permissions'] = 0644
+        gitlab_rails['backup_pg_schema'] = 'public'
+        gitlab_rails['backup_upload_connection'] = {
+         'provider' => 'AWS',
+         'region' => '${gitlab_backup_s3_region}',
+         'aws_access_key_id' => '${gitlab_backup_s3_access_key}',
+         'aws_secret_access_key' => '${gitlab_backup_s3_secret_key}'}
+        gitlab_rails['backup_upload_remote_directory'] = '${gitlab_backup_s3_bucket}'
+        gitlab_rails['backup_multipart_chunk_size'] = 104857600
+        gitlab_rails['backup_storage_class'] = 'STANDARD'
+        git_data_dirs({
+         "default" => {
+           "path" => "/mnt/git-data",
+           "failure_count_threshold" => 10,
+           "failure_wait_time" => 30,
+           "failure_reset_time" => 1800,
+           "storage_timeout" => 5}})
+        gitlab_rails['extra_google_analytics_id'] = '${google_analytics_id}'
+        gitlab_rails['omniauth_enabled'] = false
+        gitlab_rails['uploads_directory'] = "/mnt/uploads"
+        gitlab_rails['rate_limit_requests_per_period'] = 10
+        gitlab_rails['initial_root_password'] = "${gitlab_initial_root_password}"
+        gitlab_rails['initial_shared_runners_registration_token'] = "${gitlab_ci_initial_token}"
+
+        ## !- Run postgres in separate container
+        postgresql['enable'] = false
+        gitlab_rails['db_adapter'] = "postgresql"
+        gitlab_rails['db_database'] = "${postgres_db_name}"
+        gitlab_rails['db_username'] = "${postgres_username}"
+        gitlab_rails['db_password'] = "${postgres_password}"
+        gitlab_rails['db_host'] = "gitlab-postgres"
+        gitlab_rails['db_port'] = 5432
+        ## !- run redis in separate container
+        redis['enable'] = false
+        gitlab_rails['redis_host'] = "gitlab-redis"
+
+        gitlab_rails['omniauth_allow_single_sign_on'] = ['google_oauth2']
+        gitlab_rails['sync_profile_from_provider'] = ['google_oauth2']
+        gitlab_rails['sync_profile_attributes'] = ['name', 'email', 'location']
+
+        gitlab_rails['omniauth_auto_sign_in_with_provider'] = 'google_oauth2'
+        gitlab_rails['omniauth_block_auto_created_users'] = true
+        gitlab_rails['omniauth_providers'] = [{
+           "name" => "google_oauth2",
+           "app_id" => "${google_oauth2_app_id}",
+           "app_secret" => "${google_oauth2_app_secret}",
+           "args" => { "access_type" => "offline", "approval_prompt" => "" }}]
+        gitlab_monitor['enable'] = true
+        gitlab_monitor['log_directory'] = "/var/log/gitlab/gitlab-monitor"
+        gitlab_monitor['home'] = "/var/opt/gitlab/gitlab-monitor"
+
+        ## !- monitoring settings to allow gitlab exporter only
+        prometheus['enable'] = false
+        postgres_exporter['enable'] = false
+        redis_exporter['enable'] = false
+        node_exporter['enable'] = false
+        gitlab_monitor['listen_address'] = '0.0.0.0'
+        gitlab_monitor['listen_port'] = '9168'
+
+        ## !- Additional Configuration
+        ${gitlab_additional_configuration}
+
+  gitlab-runner-config:
+    image: gitlab/gitlab-runner:${gitlab_runner_image_version}
+    stdin_open: true
+    volumes:
+    - /etc/gitlab-runner/
+    tty: true
+    links:
+      - ${gitlab_subdomain}.${base_domain_name}:gitlab-server
+    command:
+    - register
+    - -n
+    - --url
+    - https://${gitlab_subdomain}.${base_domain_name}
+    - --registration-token
+    - ${gitlab_ci_initial_token}
+    - --executor
+    - docker
+    - --description
+    - Rancher Docker Runner
+    - --docker-image
+    - docker:latest
+    - --docker-volumes
+    - /var/run/docker.sock:/var/run/docker.sock
+    - --docker-privileged
+    labels:
+      io.rancher.container.start_once: 'true'
+  gitlab-runner:
+    image: gitlab/gitlab-runner:${gitlab_runner_image_version}
+    stdin_open: true
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    tty: true
+    volumes_from:
+    - gitlab-runner-config
+    command:
+    - run
+    labels:
+      io.rancher.sidekicks: gitlab-runner-config
+      io.rancher.scheduler.global: 'true'
+
+  gitlab-plantuml:
+    image: plantuml-server:jetty
