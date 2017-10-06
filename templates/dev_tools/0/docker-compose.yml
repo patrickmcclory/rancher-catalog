@@ -35,7 +35,7 @@ services:
   gitlab-redis:
     image: redis:${redis_image_version}
     volumes:
-      gitlab-redis-data:/data
+      - gitlab-redis-data:/data
 
   gitlab-server:
     image: gitlab/gitlab-ce:${gitlab_ce_image_version}
