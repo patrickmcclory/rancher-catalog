@@ -48,7 +48,6 @@ services:
     links:
       - gitlab-postgres
       - gitlab-redis
-      - gitlab-plantuml
     volumes:
       - gitlab-log-data:/var/log/gitlab
       - gitlab-conf-files:/etc/gitlab
