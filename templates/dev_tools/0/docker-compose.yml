@@ -26,11 +26,12 @@ services:
   gitlab-postgres:
     image: postgres:${postgres_image_version}
     environment:
+      PGDATA: ""/data"
       POSTGRES_USER: "${postgres_username}"
       POSTGRES_PASSWORD: "${postgres_password}"
       POSTGRES_DB: "${postgres_db_name}"
     volumes:
-      - gitlab-postgres-data:/var/lib/postgresql/data
+      - gitlab-postgres-data:/data
 
   gitlab-redis:
     image: redis:${redis_image_version}
