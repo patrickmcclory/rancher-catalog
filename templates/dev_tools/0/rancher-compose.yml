@@ -73,6 +73,27 @@
       default: "172.16.16.0/20"
       description: "CIDR blbock where the reverse proxy sits for proxying requests to the server."
       label: "Proxy IP Cidr:"
+    - variable: "gitlab_backup_s3_access_key"
+      type: "string"
+      label: "Gitlab Backup S3 AWS Access Key:"
+      description: "AWS Access Key to use when accessing S3 service to store backups"
+      type: "string"
+      required: true
+    - variable: "gitlab_backup_s3_secret_key"
+      label: "Gitlab Bakup S3 AWS Secret Key:"
+      description: "AWS Secret Key to use when accessing S3 service to store backups"
+      type: "password"
+      required: true
+    - variable: "gitlab_backup_s3_region"
+      description: "Name of the AWS region where the backup S3 bucket resides"
+      required: true
+      type: "string"
+      default: "us-west-2"
+    - variable: "gitlab_backup_s3_bucket"
+      description: "Name of the AWS S3 bucket where backups should be placed."
+      label: "Gitlab Backup S3 Bucket:"
+      required: true
+      type: "string"
     - variable: "gitlab_ci_initial_token"
       description: "Token to set for the gitlab ci runner registration process"
       label: "Gitlab CI Initial Token:"
